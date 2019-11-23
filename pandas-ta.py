@@ -15,6 +15,13 @@ class BotIndicators(object):
         """ Short for averageTrueRange() """
         return self.averageTrueRange(trueRanges, window, fillna)
 
+    def cumulativeMovingAverage(self, series):
+        """ Returns Cumulative Moving Average in a Pandas serie """
+        return series.expanding(min_periods=1).mean()
+    def CMA(self, series):
+        """ Short for cumulativeMovingAverage() """
+        return self.cumulativeMovingAverage(series)
+
     def directionalMovementIndex(self, highs, lows, closes, window=14, adxWindow=14, fillna = False):
         DMI = pd.DataFrame(columns=['pDI', 'nDI', 'DX', 'ADX'])
         upMove = highs - highs.shift()
@@ -129,6 +136,23 @@ class BotIndicators(object):
         """ Returns momentum in a Pandas series """
         return series - series.shift(window)
 
+    def movingStandardDeviation(self, series, window, fillna=False):
+        """ returns moving standard Deviation in a pandas series """
+        if fillna:
+            return series.rolling(window, min_periods=0).std()
+        else:
+            return series.rolling(window, min_periods=window).std()
+    def MSTD(self, series, window, fillna=False):
+        """ Short for movingStandardDeviation() """
+        return self.movingStandardDeviation(series, window, fillna)
+
+    def movingZScore(self, series, window=14, fillna=False):
+        """ returns moving z-score """
+        mstd = self.movingStandardDeviation(series, window, fillna)
+        ma = self.simpleMovingAverage(series, window, fillna)
+        mzscore = (series-ma)/mstd
+        return mzscore
+
     def RSI (self, series, window=14, fillna=False):
         """ Returns RSI in a Pandas series """
         #TODO: double check this
@@ -153,7 +177,7 @@ class BotIndicators(object):
             return series.rolling(window, min_periods=window).mean()
     def SMA(self, series, window=14, fillna=False):
         """ Short for simpleMovingAverage() """
-        return self.simpleMovingAverage(series, window)
+        return self.simpleMovingAverage(series, window, fillna)
 
 
     def smoothedMovingAverage(self, series, window=14, fillna=False):
@@ -175,6 +199,7 @@ class BotIndicators(object):
 
     def weightedMovingAverage(self, close, window=9, asc=True, fillna=False):
         """ Returns Weighted Moving Average in a Pandas Series """
+        #TODO: is this wrong?
         window = int(window)
         total_weight = 0.5 * window * (window + 1)
         weights_ = pd.Series(np.arange(1, window + 1))
@@ -201,3 +226,10 @@ class BotIndicators(object):
         a = series.rolling(window=period+1).max()
         b = series.shift(-period).rolling(window=period+1).max()
         return a==b
+
+    def zScore(self, series):
+        """ returns z-score """
+        std = series.std()
+        cma = self.cumulativeMovingAverage(series)
+        zscore = (series-cma)/std
+        return zscore
